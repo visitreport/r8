@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VisitMatch — รายงานเยี่ยมร้านค้าเทียบแผน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <main class="main">
+    <section class="content">
+      <div class="page-header">
+        <div class="page-title-block">
+          <h1 class="page-title">รายงานเยี่ยมร้านค้าเทียบแผน</h1>
+          <p class="page-desc">อัปโหลดไฟล์แผนเยี่ยม + ไฟล์เยี่ยมร้านค้าจริง เพื่อสรุปว่าร้านไหนเยี่ยมแล้ว ยังไม่เยี่ยม หรือเยี่ยมนอกแผน</p>
+        </div>
+        <div class="date-chip" id="period-hint">ยังไม่มีข้อมูล</div>
+      </div>
+
+      <!-- Upload -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">อัปโหลดข้อมูล</h3>
+        </div>
+        <div class="card-body">
+          <div class="upload-grid">
+            <label class="upload-box" id="dz-plan">
+              <input type="file" id="file-plan" accept=".xlsx,.xls" style="display:none;" />
+              <div class="upload-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <h4>แผนการเยี่ยม (Excel)</h4>
+              <p>ไฟล์ .xlsx ชีท CallPlanData ที่มีคอลัมน์รหัสร้านค้าและวันที่เข้าเยี่ยม</p>
+              <span class="btn btn-outline">เลือกไฟล์</span>
+              <div class="upload-filename" id="fn-plan"></div>
+            </label>
+
+            <label class="upload-box" id="dz-actual">
+              <input type="file" id="file-actual" accept=".xlsx,.xls" style="display:none;" />
+              <div class="upload-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <h4>รายงานจริง (Excel)</h4>
+              <p>ไฟล์ .xlsx รายงานเยี่ยมร้านค้าที่มีคอลัมน์วันที่เข้าเยี่ยมและในแผน/นอกแผน</p>
+              <span class="btn btn-outline">เลือกไฟล์</span>
+              <div class="upload-filename" id="fn-actual"></div>
+            </label>
+          </div>
+          <div style="text-align:center; margin-top:20px;">
+            <button class="btn btn-primary" id="btn-process" disabled>ประมวลผล</button>
+          </div>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="results-section" style="display:none;">
+        <div class="stat-card total">
+          <div class="stat-label">จำนวนร้านในแผนทั้งหมด</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card ok">
+          <div class="stat-label">ร้านที่เยี่ยมแล้ว</div>
+          <div class="stat-value" id="stat-visited">0</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-label">ร้านที่ยังไม่ได้เยี่ยม</div>
+          <div class="stat-value" id="stat-notvisited">0</div>
+        </div>
+        <div class="stat-card extra">
+          <div class="stat-label">ร้านที่เยี่ยมนอกแผน</div>
+          <div class="stat-value" id="stat-offplan">0</div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card" id="table-card" style="display:none;">
+        <div class="card-header" style="justify-content: flex-start; gap: 16px;">
+          <h3 class="card-title">ผลการเปรียบเทียบล่าสุด</h3>
+          <button class="btn btn-primary btn-lg" id="btn-download">⬇ ดาวน์โหลดรายงาน Excel</button>
+        </div>
+        <div class="card-body">
+          <div class="toolbar">
+            <input class="search" id="search-input" placeholder="ค้นหารหัสร้าน ชื่อร้าน หรือผู้รับผิดชอบ" />
+            <button class="filter-pill active" data-tab="visited">ร้านที่เยี่ยมแล้ว</button>
+            <button class="filter-pill" data-tab="notvisited">ร้านที่ยังไม่เยี่ยม</button>
+            <button class="filter-pill" data-tab="offplan">ร้านที่เยี่ยมนอกแผน (ถูกเยี่ยมแต่ไม่มีแผนในเดือนนั้น)</button>
+          </div>
+          <div class="table-wrap" id="table-container"></div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
