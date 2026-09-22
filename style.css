@@ -80,12 +80,6 @@ input { font-family: inherit; }
 }
 .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
 
-.topbar-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 64px;
-  margin-bottom: 2px;
-}
 .connection {
   padding: 8px 14px;
   background: var(--surface);
@@ -119,9 +113,9 @@ input { font-family: inherit; }
   display: grid; place-items: center; font-weight: 700; font-size: 13px;
 }
 
-.content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+.content { padding: 12px 28px 28px; max-width: 1400px; margin: 0 auto; }
 .page-header {
-  display: flex; align-items: flex-end; justify-content: space-between;
+  display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 24px; gap: 16px;
 }
 .header-right {
