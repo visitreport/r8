@@ -628,6 +628,19 @@ function downloadReport(batchMeta, cmp) {
   XLSX.writeFile(wb, fname);
 }
 
+// ลบข้อมูลรอบที่เก่ากว่า 1 วัน (สำรองไว้เผื่อ pg_cron ในฝั่ง Supabase ยังไม่ได้ตั้งค่า/ใช้งานไม่ได้)
+// ลบที่ upload_batches พอ เพราะ visit_plans / actual_visits ผูก "on delete cascade" ไว้แล้ว
+async function cleanupOldBatches() {
+  if (!sb) return;
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await sb.from('upload_batches').delete().lt('uploaded_at', cutoff);
+  } catch (e) {
+    console.error('ลบข้อมูลเก่าไม่สำเร็จ (ไม่กระทบการใช้งานหลัก)', e);
+  }
+}
+
 /* ---------------------- init ---------------------- */
 
 checkConnection();
+cleanupOldBatches();
