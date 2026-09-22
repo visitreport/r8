@@ -83,7 +83,8 @@ input { font-family: inherit; }
 .topbar-row {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 14px;
+  margin-top: 10px;
+  margin-bottom: 2px;
 }
 .connection {
   padding: 8px 14px;
