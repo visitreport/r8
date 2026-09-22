@@ -1,0 +1,2 @@
+# ไฟล์นี้มีค่าเชื่อมต่อ Supabase จริง (URL + anon key) ไม่ควร commit ขึ้น public repo
+config.js
