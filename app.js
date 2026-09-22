@@ -324,95 +324,6 @@ async function insertChunked(table, rows, batchId, chunkSize = 500, concurrency 
   await Promise.all(workers);
 }
 
-/* ---------------------- upload history ---------------------- */
-
-// ดึงข้อมูลทุกแถวของ batch หนึ่งจากตาราง (วน range เผื่อข้อมูลเกิน page size ของ Supabase)
-async function fetchAllRows(table, batchId, pageSize = 1000) {
-  let all = [];
-  let from = 0;
-  while (true) {
-    const { data, error } = await sb
-      .from(table)
-      .select('*')
-      .eq('batch_id', batchId)
-      .range(from, from + pageSize - 1);
-    if (error) throw error;
-    all = all.concat(data || []);
-    if (!data || data.length < pageSize) break;
-    from += pageSize;
-  }
-  return all;
-}
-
-async function loadHistory() {
-  const container = document.getElementById('history-container');
-  container.innerHTML = '<div class="empty-note">กำลังโหลดประวัติ...</div>';
-  try {
-    const { data, error } = await sb
-      .from('upload_batches')
-      .select('*')
-      .order('uploaded_at', { ascending: false })
-      .limit(20);
-    if (error) throw error;
-
-    if (!data || !data.length) {
-      container.innerHTML = '<div class="empty-note">ยังไม่มีประวัติการอัปโหลด</div>';
-      return;
-    }
-
-    const headers = ['วันที่อัปโหลด', 'บริษัท / ช่องทาง', 'ช่วงเวลา', 'ไฟล์แผน', 'ไฟล์เยี่ยมจริง', ''];
-    let html = '<table class="data"><thead><tr>' + headers.map((h) => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
-    data.forEach((b) => {
-      html += '<tr>' +
-        `<td>${escapeHtml(fmtDt(b.uploaded_at))}</td>` +
-        `<td>${escapeHtml([b.company, b.channel].filter(Boolean).join(' / ') || '-')}</td>` +
-        `<td>${escapeHtml(`${b.period_start || ''} ถึง ${b.period_end || ''}`)}</td>` +
-        `<td>${escapeHtml(b.plan_filename || '')}</td>` +
-        `<td>${escapeHtml(b.actual_filename || '')}</td>` +
-        `<td><button class="btn btn-outline btn-view-history" data-batch-id="${escapeHtml(b.id)}">ดูสรุป + ดาวน์โหลด</button></td>` +
-        '</tr>';
-    });
-    html += '</tbody></table>';
-    container.innerHTML = html;
-
-    container.querySelectorAll('.btn-view-history').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const meta = data.find((b) => String(b.id) === btn.dataset.batchId);
-        viewHistoryBatch(btn.dataset.batchId, meta);
-      });
-    });
-  } catch (e) {
-    container.innerHTML = `<div class="empty-note">โหลดประวัติไม่สำเร็จ: ${escapeHtml(e.message || String(e))}</div>`;
-  }
-}
-
-async function viewHistoryBatch(batchId, batchMeta) {
-  logReset();
-  logAppend('กำลังดึงข้อมูลจาก Supabase สำหรับรอบที่เลือก...');
-  try {
-    const [planRows, actualRows] = await Promise.all([
-      fetchAllRows('visit_plans', batchId),
-      fetchAllRows('actual_visits', batchId),
-    ]);
-    logAppend(`ดึงข้อมูลสำเร็จ: แผน ${planRows.length} แถว, เยี่ยมจริง ${actualRows.length} แถว`);
-
-    logAppend('กำลังคำนวณเปรียบเทียบ...');
-    const cmp = computeComparison(planRows, actualRows);
-    lastComparison = cmp;
-    lastBatchMeta = batchMeta;
-    renderResults(batchMeta, cmp);
-
-    logAppend('เสร็จสิ้น ✅');
-    document.getElementById('log').style.display = 'none';
-    document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (e) {
-    console.error(e);
-    logError(e.message || String(e));
-  }
-}
-
-document.getElementById('btn-refresh-history').addEventListener('click', loadHistory);
-
 /* ---------------------- file inputs ---------------------- */
 
 document.getElementById('file-plan').addEventListener('change', (e) => {
@@ -516,7 +427,6 @@ document.getElementById('btn-process').addEventListener('click', async () => {
 
     logAppend('เสร็จสิ้น ✅ บันทึกและสรุปผลเรียบร้อย');
     document.getElementById('log').style.display = 'none';
-    loadHistory();
   } catch (err) {
     console.error(err);
     logError(err.message || String(err));
@@ -709,4 +619,3 @@ function downloadReport(batchMeta, cmp) {
 /* ---------------------- init ---------------------- */
 
 checkConnection();
-loadHistory();

@@ -13,6 +13,11 @@
 </head>
 <body>
 
+<div class="connection" id="connStatus">
+  <span class="dot"></span>
+  <span class="conn-text">กำลังตรวจสอบการเชื่อมต่อ...</span>
+</div>
+
 <div class="app">
 
   <main class="main">
@@ -24,10 +29,6 @@
         </div>
         <div class="header-right">
           <div class="date-chip" id="period-hint">ยังไม่มีข้อมูล</div>
-          <div class="connection" id="connStatus">
-            <span class="dot"></span>
-            <span class="conn-text">กำลังตรวจสอบการเชื่อมต่อ...</span>
-          </div>
         </div>
       </div>
 
@@ -64,19 +65,6 @@
             <button class="btn btn-primary" id="btn-process" disabled>ประมวลผล</button>
           </div>
           <div class="log" id="log"></div>
-        </div>
-      </div>
-
-      <!-- History -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">ประวัติการอัปโหลด</h3>
-          <button class="btn btn-outline" id="btn-refresh-history">รีเฟรช</button>
-        </div>
-        <div class="card-body">
-          <div class="table-wrap" id="history-container">
-            <div class="empty-note">กำลังโหลดประวัติ...</div>
-          </div>
         </div>
       </div>
 
