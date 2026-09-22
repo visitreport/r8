@@ -2,7 +2,13 @@
    รายงานเยี่ยมร้านค้าเทียบแผน — app.js
    ========================================================================= */
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let sb = null;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (e) {
+  // เกิดขึ้นถ้าโหลดสคริปต์ @supabase/supabase-js จาก CDN ไม่สำเร็จ (เช่น อินเทอร์เน็ตหลุด/ถูกบล็อก)
+  console.error('ไม่สามารถสร้าง Supabase client ได้ (สคริปต์ Supabase อาจโหลดไม่สำเร็จ)', e);
+}
 
 let planFile = null;
 let actualFile = null;
@@ -288,6 +294,11 @@ async function checkConnection() {
   const el = document.getElementById('connStatus');
   if (!el) return;
   const textEl = el.querySelector('.conn-text');
+  if (!sb) {
+    textEl.textContent = 'โหลด Supabase SDK ไม่สำเร็จ - ตรวจสอบอินเทอร์เน็ต/การเข้าถึง CDN แล้วรีเฟรชหน้า';
+    el.className = 'connection warn';
+    return;
+  }
   try {
     const { error } = await sb.from('upload_batches').select('id', { count: 'exact', head: true });
     if (error) throw error;
@@ -353,6 +364,7 @@ document.getElementById('btn-process').addEventListener('click', async () => {
   btn.textContent = 'กำลังประมวลผล...';
   logReset();
   try {
+    if (!sb) throw new Error('ไม่สามารถเชื่อมต่อ Supabase SDK ได้ กรุณาตรวจสอบอินเทอร์เน็ต/การเข้าถึง CDN แล้วรีเฟรชหน้าใหม่');
     logAppend('กำลังอ่านไฟล์แผนเยี่ยม...');
     let planWb;
     try {
